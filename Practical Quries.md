@@ -571,3 +571,73 @@ AND r.rn <= 3;
 
 ------------------
 
+```
+                Clients / Applications
+                         |
+                     Load Balancer
+                         |
+                     PgBouncer
+                         |
+                -------------------
+                |                 |
+           Primary DB        Read Replicas
+                |
+           Partitioned Tables
+                |
+          Sharded Databases
+```
+
+-------------
+
+
+## 2. PgBouncer (Connection Pooling)
+
+PostgreSQL has a **connection limit (~100–500 connections)**.
+
+If thousands of users connect directly → database crashes.
+
+PgBouncer acts as a **connection pooler**.
+
+Architecture:
+
+```
+    Application → PgBouncer → PostgreSQL
+```
+
+Example:
+
+```
+10,000 app connections  
+ ↓  
+PgBouncer pool  
+ ↓  
+100 actual DB connections
+```
+
+Benefits:
+
+-   reduces connection overhead
+    
+-   improves performance
+    
+-   prevents DB overload
+    
+
+Typical config:
+
+max_client_conn = 10000  
+default_pool_size = 100
+
+---------------
+
+| Tool                 | Purpose                |
+| -------------------- | ---------------------- |
+| PgBouncer            | connection pooling     |
+| Patroni              | high availability      |
+| HAProxy              | load balancing         |
+| Citus                | distributed PostgreSQL |
+| pgBackRest           | backups                |
+| Prometheus + Grafana | monitoring             |
+
+-----------------------
+
