@@ -373,6 +373,63 @@ WHERE account_id = 101;
 ```
 --------
 
+1. Sharding in PostgreSQL
+
+The most common way to implement sharding in PostgreSQL is using the Citus extension (distributed PostgreSQL).
+
+Step 1 — Install Citus Extension
+
+```sql
+CREATE EXTENSION citus;
+```
+
+This converts PostgreSQL into a distributed cluster.
+
+## Step 2 — Create a Table
+
+```sql
+CREATE TABLE users (
+    id INT,
+    name TEXT,
+    email TEXT
+);
+```
+
+Step 3 — Distribute (Shard) the Table
+
+```sql
+SELECT create_distributed_table('users', 'id');
+```
+
+Now PostgreSQL will:
+
+shard the table
+
+distribute rows based on hash(id)
+
+store shards across worker nodes
+
+Step 4 — Add Worker Nodes
+
+```sql
+SELECT master_add_node('worker1', 5432);
+SELECT master_add_node('worker2', 5432);
+```
+
+Now data will be distributed like:
+
+```
+Coordinator Node
+      |
+ -----------------------
+ |          |          |
+Worker1   Worker2   Worker3
+```
+
+Queries automatically run in parallel across shards.
+
+-----------
+
 Write a query to find employees whose salary is greater than the average salary of their department using a CTE.
 
 ```sql
