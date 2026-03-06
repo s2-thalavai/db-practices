@@ -373,3 +373,144 @@ WHERE account_id = 101;
 ```
 --------
 
+Write a query to find employees whose salary is greater than the average salary of their department using a CTE.
+
+```sql
+WITH dept_avg AS (
+    SELECT department, AVG(salary) AS avg_salary
+    FROM employees
+    GROUP BY department
+)
+
+SELECT e.name, e.salary, e.department
+FROM employees e
+JOIN dept_avg d
+ON e.department = d.department
+WHERE e.salary > d.avg_salary;
+```
+----------------
+
+## Find the Second Highest Salary Using CTE
+
+```sql
+WITH ranked_salary AS (
+    SELECT name, salary,
+           DENSE_RANK() OVER (ORDER BY salary DESC) AS rnk
+    FROM employees
+)
+
+SELECT name, salary
+FROM ranked_salary
+WHERE rnk = 2;
+```
+-------------------
+
+## Generate Numbers from 1 to 10 Using Recursive CTE
+
+Query
+```sql
+WITH RECURSIVE numbers AS (
+    SELECT 1 AS n
+    UNION ALL
+    SELECT n + 1
+    FROM numbers
+    WHERE n < 10
+)
+
+SELECT * FROM numbers;
+```
+
+## Output
+```
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+```
+----------------------
+
+```sql
+WITH duplicates AS (
+    SELECT id,
+           ROW_NUMBER() OVER (
+               PARTITION BY name
+               ORDER BY id
+           ) AS rn
+    FROM employees
+)
+
+DELETE FROM employees
+WHERE id IN (
+    SELECT id
+    FROM duplicates
+    WHERE rn > 1
+);
+```
+
+------------
+
+```sql
+
+WITH duplicates AS (
+    SELECT id,
+           ROW_NUMBER() OVER (
+               PARTITION BY name
+               ORDER BY created_at DESC
+           ) AS rn
+    FROM employees
+)
+
+DELETE FROM employees
+USING duplicates
+WHERE employees.id = duplicates.id
+AND duplicates.rn > 1;
+```
+
+------------
+
+## Increase salary by 10% for employees earning below department average.
+
+```sql
+WITH dept_avg AS (
+    SELECT department, AVG(salary) avg_salary
+    FROM employees
+    GROUP BY department
+)
+
+UPDATE employees e
+SET salary = salary * 1.10
+FROM dept_avg d
+WHERE e.department = d.department
+AND e.salary < d.avg_salary;
+```
+
+----------
+
+## Update top 3 highest salaries in each department using CTE + window functions
+
+```sql
+WITH ranked_emp AS (
+    SELECT id,
+           ROW_NUMBER() OVER (
+               PARTITION BY department
+               ORDER BY salary DESC
+           ) AS rn
+    FROM employees
+)
+
+UPDATE employees e
+SET salary = salary * 1.10
+FROM ranked_emp r
+WHERE e.id = r.id
+AND r.rn <= 3;
+
+```
+
+------------------
+
