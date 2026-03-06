@@ -640,4 +640,93 @@ default_pool_size = 100
 | Prometheus + Grafana | monitoring             |
 
 -----------------------
+## Find Customers Who Ordered on Consecutive Days
+
+```sql
+WITH login_rank AS (
+    SELECT user_id,
+           login_date,
+           login_date - ROW_NUMBER() OVER(
+               PARTITION BY user_id
+               ORDER BY login_date
+           ) AS grp
+    FROM logins
+)
+
+SELECT user_id
+FROM login_rank
+GROUP BY user_id, grp
+HAVING COUNT(*) >= 3;
+```
+
+----------
+
+## Step 1 — Assign Row Numbers
+
+Query:
+
+```sql
+SELECT customer_id,
+       order_date,
+       ROW_NUMBER() OVER(
+           PARTITION BY customer_id
+           ORDER BY order_date
+       ) rn
+FROM orders;
+```
+
+## Result:
+
+| customer_id | order_date | rn |
+| ----------- | ---------- | -- |
+| 1           | 2024-01-01 | 1  |
+| 1           | 2024-01-02 | 2  |
+| 1           | 2024-01-04 | 3  |
+| 2           | 2024-01-01 | 1  |
+| 2           | 2024-01-03 | 2  |
+
+## Step 2 — Create Group Identifier
+
+Now we compute:
+
+```
+order_date - ROW_NUMBER()
+```
+
+## Example:
+
+```
+order_date - ROW_NUMBER()
+```
+
+| customer_id | order_date | rn | order_date - rn |
+| ----------- | ---------- | -- | --------------- |
+| 1           | 2024-01-01 | 1  | 2023-12-31      |
+| 1           | 2024-01-02 | 2  | 2023-12-31      |
+| 1           | 2024-01-04 | 3  | 2024-01-01      |
+| 2           | 2024-01-01 | 1  | 2023-12-31      |
+| 2           | 2024-01-03 | 2  | 2024-01-01      |
+
+Consecutive days produce the same value.
+
+Example:
+
+```
+Jan 1 - 1 = Dec 31
+Jan 2 - 2 = Dec 31
+```
+
+Same value → same group.
+
+But when there's a gap:
+
+```
+Jan 4 - 3 ≠ Dec 31
+```
+
+New group appears.
+
+------------------------------
+
+
 
